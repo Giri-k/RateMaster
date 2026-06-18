@@ -1,4 +1,5 @@
 import logging
+import time
 from typing import Any
 
 from fastapi import Request
@@ -10,6 +11,7 @@ from app.algorithms.fixed_window import FixedWindowLimiter
 from app.algorithms.sliding_window import SlidingWindowLimiter
 from app.algorithms.token_bucket import TokenBucketLimiter
 from app.config import RATE_LIMIT_RULES, RuleConfig
+from app.metrics import LATENCY, REQUEST_COUNT
 
 logger = logging.getLogger("ratemaster")
 
@@ -45,7 +47,17 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         limiter = ALGORITHMS[rule.algorithm]
 
         key = f"{identifier}:{request.url.path}"
+
+        start = time.perf_counter()
         result = await limiter.check(key, rule.limit, rule.window)
+        duration = time.perf_counter() - start
+
+        LATENCY.labels(algorithm=rule.algorithm, route=request.url.path).observe(duration)
+        REQUEST_COUNT.labels(
+            algorithm=rule.algorithm,
+            route=request.url.path,
+            result="allowed" if result.allowed else "denied",
+        ).inc()
 
         if not result.allowed:
             logger.warning(

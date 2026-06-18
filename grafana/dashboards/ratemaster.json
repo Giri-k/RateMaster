@@ -1,0 +1,60 @@
+{
+  "title": "RateMaster",
+  "uid": "ratemaster",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Request Rate (allowed vs denied)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(rate(ratemaster_requests_total[1m])) by (result)",
+          "legendFormat": "{{ result }}"
+        }
+      ],
+      "datasource": "Prometheus"
+    },
+    {
+      "id": 2,
+      "title": "P99 Latency by Algorithm",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(ratemaster_latency_seconds_bucket[1m])) by (algorithm, le))",
+          "legendFormat": "{{ algorithm }}"
+        }
+      ],
+      "datasource": "Prometheus"
+    },
+    {
+      "id": 3,
+      "title": "Request Rate by Route",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(ratemaster_requests_total[1m])) by (route)",
+          "legendFormat": "{{ route }}"
+        }
+      ],
+      "datasource": "Prometheus"
+    },
+    {
+      "id": 4,
+      "title": "Total Denials (last 1h)",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(increase(ratemaster_requests_total{result=\"denied\"}[1h]))",
+          "legendFormat": "Denied"
+        }
+      ],
+      "datasource": "Prometheus"
+    }
+  ],
+  "time": { "from": "now-15m", "to": "now" },
+  "refresh": "10s"
+}

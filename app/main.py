@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from app.metrics import metrics_app
 from app.middleware import RateLimitMiddleware
 from app.redis_client import get_redis, close_redis
 
@@ -22,6 +23,7 @@ app = FastAPI(
 
 
 app.add_middleware(RateLimitMiddleware)
+app.mount("/metrics", metrics_app)
 
 
 @app.get("/health")
